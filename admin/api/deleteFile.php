@@ -1,8 +1,12 @@
 <?php
-    $array_name_file = "../../" . $_POST["nameFile"] . ".html";
+$_POST = json_decode(file_get_contents("php://input"), true);
 
-    $file_del = file_exists($array_name_file) ? unlink($array_name_file) : false;
+$newFile = "../../" . $_POST["deletePage"]; // получаем названия от пользователя и дописываем расширения и путь
 
-    echo $file_del ? "Файл удалён" : "Файл не найден";
-  
+if(file_exists($newFile)) {
+    unlink($newFile);
+} else {
+    header("HTTP/1.0 400 Bad Request"); //Отправка пользователю ошибку
+}
+
 ?>

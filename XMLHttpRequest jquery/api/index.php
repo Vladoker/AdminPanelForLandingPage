@@ -12,8 +12,7 @@ foreach($htmlFiles as $file) {
 }
 
 
-//   echo var_dump($htmlFiles); 
+// echo var_dump($htmlFiles); 
 echo json_encode($array);// отправка в json формате
-
 
 ?>

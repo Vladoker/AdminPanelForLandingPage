@@ -7,16 +7,18 @@
     <title>Document</title>
 </head>
 <body>
-
-    <input type="text" id="createInput">
-    <button id="createButton">Создать страницу</button>
-    <br>
-    <input type="text" id="delInput">
-    <button id="delButton">Удалить страницу</button>
-
     
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <div id="app">
+       <input type="text" v-model="InputValue">
+       <button v-on:click="setValueInput">Создать страницу</button>
+       <div v-for="(page , index) in pageList">
+           <h1>{{ index + 1 }} {{ page }} <span v-on:click="deletePage(page)" style="color:red; cursor: pointer;">&#215;</span></h1>
+       </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
    <script src="bundle.js"></script>
+
 </body>
 </html>
 
