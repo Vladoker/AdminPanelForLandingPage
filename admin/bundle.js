@@ -1802,8 +1802,37 @@ module.exports = class DOMHelper {
     } 
 }
 },{}],30:[function(require,module,exports){
+module.exports = class EditorText {
+    constructor(element, virtualElement) {
+        this.element = element;
+        this.virtualElement = virtualElement;
+
+        this.element.addEventListener("click", () => this.onClick());
+        this.element.addEventListener("blur", () => this.onBlur());
+        this.element.addEventListener("keypress", (e) => this.onKeypress(e));       
+        this.element.addEventListener("input", () => this.onTextEdit());
+    }
+
+    onClick() {
+        this.element.contentEditable = "true";
+        this.element.focus();
+    }
+    onBlur() {
+        this.element.removeAttribute("contenteditable");
+    }
+    onKeypress(e) {
+       if(e.keyCode == 13) {
+           this.element.blur();
+       }
+    }   
+    onTextEdit() { 
+        this.virtualElement.innerHTML = this.element.innerHTML;
+    }
+}
+},{}],31:[function(require,module,exports){
 const axios = require("axios");
 const DOMHelper = require("./dom-helper");
+const EditorText = require("./editor-text");
 
 require("./iframe-load");
 module.exports = class Editor {
@@ -1813,7 +1842,9 @@ module.exports = class Editor {
 
     open(page) {
         this.currentPage = page;
-        axios.get("../" + page)
+
+        axios
+        .get("../" + page)
         .then(res => DOMHelper.parseStrToDom(res.data))
         .then(DOMHelper.wrapTextNodes)
         .then((dom) => {
@@ -1823,22 +1854,34 @@ module.exports = class Editor {
         .then(DOMHelper.serializeDOMToStr)
         .then((html) => axios.post("./api/saveTempPage.php", { html }))
         .then(() => this.iframe.load("../temp.html"))
-        .then(() => this.enableEditor())
+        .then(() => this.enableEditing())
+        .then(() => this.injectStyles())
     }
 
-    enableEditor() {
+    enableEditing() {
         this.iframe.contentDocument.body.querySelectorAll("text-editor").forEach((element) => {
-            element.contentEditable = "true";
-            element.addEventListener("input", () => {
-                this.onTextEdit(element);
-            })
+            const id = element.getAttribute("nodeid");
+            const virtualElement = this.virtualDom.body.querySelector(`[nodeid="${id}"]`);
+           new EditorText(element, virtualElement);
         })
     }
 
-    onTextEdit(element) {
-        const id = element.getAttribute("nodeid");
-        this.virtualDom.body.querySelector(`[nodeid="${id}"]`).innerHTML = element.innerHTML;
+    injectStyles() {
+        const style = this.iframe.contentDocument.createElement("style");
+        style.innerHTML = `
+            text-editor:hover {
+                outline: 3px solid orange;
+                outline-offset: 8px;
+            }
+            text-editor:focus {
+                outline: 3px solid red;
+                outline-offset: 8px;
+            }
+        `;
+        this.iframe.contentDocument.head.appendChild(style);
     }
+
+   
 
     save() {
         const newDom = this.virtualDom.cloneNode(this.virtualDom);
@@ -1848,7 +1891,7 @@ module.exports = class Editor {
     }
 
 }
-},{"./dom-helper":29,"./iframe-load":31,"axios":1}],31:[function(require,module,exports){
+},{"./dom-helper":29,"./editor-text":30,"./iframe-load":32,"axios":1}],32:[function(require,module,exports){
 /*eslint-disable */
 HTMLIFrameElement.prototype.load = function (url, callback) {
     const iframe = this;
@@ -1894,7 +1937,7 @@ HTMLIFrameElement.prototype.load = function (url, callback) {
         }, interval);
     }
 }
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 const Editor = require("./editor");
 
 window.editor = new Editor();
@@ -1902,4 +1945,4 @@ window.editor = new Editor();
 window.onload = () => {
     window.editor.open("index.html");
 }
-},{"./editor":30}]},{},[32]);
+},{"./editor":31}]},{},[33]);
