@@ -1754,36 +1754,152 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],29:[function(require,module,exports){
-
-const axios = require("axios");
-
-new Vue(
-{
-    created() {
-        this.updatePageList();
-    },
-    el:"#app",
-    data: {
-        "pageList": [],
-        "InputValue": ""
-    },
-  methods: {
-    setValueInput() {
-        axios.post("./api/createNewHtmlPage.php", { "name": this.InputValue }).then(() => {
-            this.updatePageList()
-        });
-    },
-    updatePageList() {
-        //заспорс на сервер что бы посмотреть что хранится в api
-        axios.get("./api/").then((response) => {
-            this.pageList = response.data     
-        });
-    },
-    deletePage(page) {
-     axios.post("./api/deleteFile.php",{ "deletePage": page }).then(() => {
-        this.updatePageList();
-     });
+module.exports = class DOMHelper {
+    static parseStrToDom(str) {
+        const parser = new DOMParser();
+        return parser.parseFromString(str, "application/xml");
     }
-  }
-});
-},{"axios":1}]},{},[29]);
+
+    static serializeDOMToStr(dom) {
+        const serealizer = new XMLSerializer();
+        return serealizer.serializeToString(dom);
+    }
+
+    static wrapTextNodes(dom) {
+
+        const body = dom.body;
+
+            let textNodes = [];
+            const recursy = (element) => {
+                element.childNodes.forEach((node) => {
+                   if (node.nodeName == "#text" && node.nodeValue.replace(/\s+/g, "").length > 0) {
+                    textNodes.push(node);
+                   } else {
+                    recursy(node);
+                   }
+                });
+            }
+
+            recursy(body);
+
+            textNodes.forEach((node, i) => {
+               const wrapper = dom.createElement("text-editor");
+               node.parentNode.replaceChild(wrapper, node);
+               wrapper.appendChild(node);
+               wrapper.contentEditable = "true";
+               wrapper.setAttribute("nodeid", i);
+            });
+
+           
+
+        return dom;
+    }
+
+    static unwrapTextNodes(dom) {
+        dom.body.querySelectorAll("text-editor").forEach((element) => {
+            element.parentNode.replaceChild(element.firstChild, element);
+        })
+    } 
+}
+},{}],30:[function(require,module,exports){
+const axios = require("axios");
+const DOMHelper = require("./dom-helper");
+
+require("./iframe-load");
+module.exports = class Editor {
+    constructor() {
+        this.iframe = document.querySelector("iframe");
+    }
+
+    open(page) {
+        this.currentPage = page;
+        axios.get("../" + page)
+        .then(res => DOMHelper.parseStrToDom(res.data))
+        .then(DOMHelper.wrapTextNodes)
+        .then((dom) => {
+            this.virtualDom = dom;
+            return dom;
+        })
+        .then(DOMHelper.serializeDOMToStr)
+        .then((html) => axios.post("./api/saveTempPage.php", { html }))
+        .then(() => this.iframe.load("../temp.html"))
+        .then(() => this.enableEditor())
+    }
+
+    enableEditor() {
+        this.iframe.contentDocument.body.querySelectorAll("text-editor").forEach((element) => {
+            element.contentEditable = "true";
+            element.addEventListener("input", () => {
+                this.onTextEdit(element);
+            })
+        })
+    }
+
+    onTextEdit(element) {
+        const id = element.getAttribute("nodeid");
+        this.virtualDom.body.querySelector(`[nodeid="${id}"]`).innerHTML = element.innerHTML;
+    }
+
+    save() {
+        const newDom = this.virtualDom.cloneNode(this.virtualDom);
+        DOMHelper.unwrapTextNodes(newDom);
+        const html = DOMHelper.serializeDOMToStr(newDom);
+        axios.post("./api/savePage.php", { pageName: this.currentPage , html })
+    }
+
+}
+},{"./dom-helper":29,"./iframe-load":31,"axios":1}],31:[function(require,module,exports){
+/*eslint-disable */
+HTMLIFrameElement.prototype.load = function (url, callback) {
+    const iframe = this;
+    try {
+        iframe.src = url + "?rnd=" + Math.random().toString().substring(2);
+    } catch (error) {
+        if (!callback) {
+            return new Promise((resolve, reject) => {
+                reject(error);
+            })
+        } else {
+            callback(error);
+        }
+    }
+    
+    const maxTime = 60000;
+    const interval = 200;
+
+    let timerCount = 0;
+
+    if (!callback) {
+        return new Promise((resolve, reject) => {
+            const timer = setInterval(function () {
+                if (!iframe) return clearInterval(timer);
+                timerCount++;
+                if (iframe.contentDocument && iframe.contentDocument.readyState === "complete") {
+                    clearInterval(timer);
+                    resolve();
+                } else if (timerCount * interval > maxTime) {
+                    reject(new Error("Iframe load fail!"));
+                }
+            }, interval);
+        })
+    } else {
+        const timer = setInterval(function () {
+            if (!iframe) return clearInterval(timer);
+            if (iframe.contentDocument && iframe.contentDocument.readyState === "complete") {
+                clearInterval(timer);
+                callback();
+            } else if (timerCount * interval > maxTime) {
+                callback(new Error("Iframe load fail!"));
+            }
+        }, interval);
+    }
+}
+},{}],32:[function(require,module,exports){
+const Editor = require("./editor");
+
+window.editor = new Editor();
+
+window.onload = () => {
+    window.editor.open("index.html");
+}
+},{"./editor":30}]},{},[32]);
