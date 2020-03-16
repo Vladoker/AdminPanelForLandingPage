@@ -12,7 +12,7 @@ module.exports = class Editor {
         this.currentPage = page;
 
         axios
-        .get("../" + page)
+        .get("../" + page + "?rnd=" + Math.random())
         .then(res => DOMHelper.parseStrToDom(res.data))
         .then(DOMHelper.wrapTextNodes)
         .then((dom) => {
@@ -38,11 +38,11 @@ module.exports = class Editor {
         const style = this.iframe.contentDocument.createElement("style");
         style.innerHTML = `
             text-editor:hover {
-                outline: 3px solid orange;
+                outline: 2px solid orange;
                 outline-offset: 8px;
             }
             text-editor:focus {
-                outline: 3px solid red;
+                outline: 2px solid red;
                 outline-offset: 8px;
             }
         `;
@@ -51,11 +51,13 @@ module.exports = class Editor {
 
    
 
-    save() {
+    save(onSucces, onError) {
         const newDom = this.virtualDom.cloneNode(this.virtualDom);
         DOMHelper.unwrapTextNodes(newDom);
         const html = DOMHelper.serializeDOMToStr(newDom);
         axios.post("./api/savePage.php", { pageName: this.currentPage , html })
+        .then(onSucces)
+        .catch(onError);
     }
 
 }

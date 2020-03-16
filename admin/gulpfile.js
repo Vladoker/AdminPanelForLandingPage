@@ -9,8 +9,7 @@ gulp.task("build_js", () => {
     });
 
 gulp.task("watch", () => {
-      gulp.watch("./src/main.js", gulp.parallel("build_js"));  
-      gulp.watch("./src/editor.js", gulp.parallel("build_js"));  
+      gulp.watch("./src/*.js", gulp.parallel("build_js"));   
 });
 
 // gulp.task("build", gulp.parallel("task1","task2","task3","task4")); // Можно паралельно вызвать нескалько тасков

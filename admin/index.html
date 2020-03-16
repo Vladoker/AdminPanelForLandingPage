@@ -4,15 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="css/uikit.min.css">
     <link rel="stylesheet" href="css/style.css">
     <title>Document</title>
 </head>
 <body>
     <iframe src="" frameborder="0"></iframe>
+
+    <div id="app">
+        <div class="panel">
+            <button class="uk-button uk-button-primary" uk-toggle="target: #modal-save">Опубликовать</button>
+        </div>
+    <!-- This is the modal -->
+    <div id="modal-save" uk-modal>
+        <div class="uk-modal-dialog uk-modal-body">
+            <h2 class="uk-modal-title">Сохранение</h2>
+            <p>Вы действительно хотите сохранить и опубликовать именения ?</p>
+            <p class="uk-text-right">
+                <button class="uk-button uk-button-default uk-modal-close" type="button">Отмена</button>
+                <button class="uk-button uk-button-primary uk-modal-close" type="button" id="savePage">Опубликовать</button>
+            </p>
+        </div>
+    </div>
+    </div>
+    
+    <div class="loader">
+        <span uk-spinner="ratio: 4.5"></span>
+    </div>
   
 
-
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+ 
    <script src="bundle.js"></script>
 
 </body>

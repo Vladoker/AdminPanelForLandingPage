@@ -1,7 +1,37 @@
 iframe {
     position: absolute;
-    top: 0;
+    top: 65px;
     left: 0;
     width: 100%;
     height: 100%;
+}
+.panel {
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px;
+    height: 65px;
+    border-bottom: 1px solid #1E87F0;
+    box-sizing: border-box;
+}
+.loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.418);
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.4s;
+}
+.active {
+    visibility: visible;
+    opacity: 1;
+}
+.loader span {
+   color: white;
+   fill: white;
 }
